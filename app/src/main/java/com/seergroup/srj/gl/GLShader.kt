@@ -1,6 +1,10 @@
 package com.seergroup.srj.gl
 
 import android.opengl.GLES32
+import com.seergroup.srj.gl.matrix.Matrix4x4
+import com.seergroup.srj.gl.matrix.Vec2
+import com.seergroup.srj.gl.matrix.Vec3
+import com.seergroup.srj.gl.matrix.Vec4
 import java.nio.IntBuffer
 
 class GLShader {
@@ -92,20 +96,42 @@ class GLShader {
         d = 0
     }
 
-    fun setVertexAttribPointer(location: Int, tupleSize: Int, type: Int, stride: Int, offset: Int) {
-        GLES32.glVertexAttribPointer(location, tupleSize, type, false, stride, offset)
+    companion object {
+        fun setVertexAttribPointer(
+            location: Int,
+            tupleSize: Int,
+            type: Int,
+            stride: Int,
+            offset: Int
+        ) {
+            GLES32.glVertexAttribPointer(location, tupleSize, type, false, stride, offset)
+        }
+
+        fun enableAttributeArray(location: Int) {
+            GLES32.glEnableVertexAttribArray(location)
+        }
     }
 
     fun setVertexAttribPointer(name: String, tupleSize: Int, type: Int, stride: Int, offset: Int) {
         setVertexAttribPointer(GLES32.glGetAttribLocation(d, name), tupleSize, type, stride, offset)
     }
 
-    fun enableAttributeArray(location: Int) {
-        GLES32.glEnableVertexAttribArray(location)
+    fun setVertexAttribPointer(
+        location: Int,
+        tupleSize: Int,
+        type: Int,
+        stride: Int,
+        offset: Int
+    ) {
+        GLES32.glVertexAttribPointer(location, tupleSize, type, false, stride, offset)
     }
 
     fun enableAttributeArray(name: String) {
         enableAttributeArray(GLES32.glGetAttribLocation(d, name))
+    }
+
+    fun enableAttributeArray(location: Int) {
+        GLES32.glEnableVertexAttribArray(location)
     }
 
     fun setBool(name: String, value: Boolean) {
@@ -128,6 +154,10 @@ class GLShader {
         GLES32.glUniform2fv(GLES32.glGetUniformLocation(d, name), 1, value, 0)
     }
 
+    fun setVec2(name: String, value: Vec2) {
+        GLES32.glUniform2fv(GLES32.glGetUniformLocation(d, name), 1, value.data, 0)
+    }
+
     fun setVec3(name: String, x: Float, y: Float, z: Float) {
         GLES32.glUniform3f(GLES32.glGetUniformLocation(d, name), x, y, z)
     }
@@ -136,12 +166,20 @@ class GLShader {
         GLES32.glUniform3fv(GLES32.glGetUniformLocation(d, name), 1, value, 0)
     }
 
+    fun setVec3(name: String, value: Vec3) {
+        GLES32.glUniform3fv(GLES32.glGetUniformLocation(d, name), 1, value.data, 0)
+    }
+
     fun setVec4(name: String, x: Float, y: Float, z: Float, w: Float) {
         GLES32.glUniform4f(GLES32.glGetUniformLocation(d, name), x, y, z, w)
     }
 
     fun setVec4(name: String, value: FloatArray) {
         GLES32.glUniform4fv(GLES32.glGetUniformLocation(d, name), 1, value, 0)
+    }
+
+    fun setVec4(name: String, value: Vec4) {
+        GLES32.glUniform4fv(GLES32.glGetUniformLocation(d, name), 1, value.data, 0)
     }
 
     fun setMat2(name: String, value: FloatArray) {
@@ -156,6 +194,7 @@ class GLShader {
         GLES32.glUniformMatrix4fv(GLES32.glGetUniformLocation(d, name), 1, false, value, 0)
     }
 
-    fun setTexture(name: String, texture: Int, index: Int) {
+    fun setMat4(name: String, value: Matrix4x4) {
+        GLES32.glUniformMatrix4fv(GLES32.glGetUniformLocation(d, name), 1, false, value.data, 0)
     }
 }

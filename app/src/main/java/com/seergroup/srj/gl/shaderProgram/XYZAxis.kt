@@ -6,9 +6,6 @@ import com.seergroup.srj.gl.GLShader
 import com.seergroup.srj.gl.GLVertexArrayObject
 import com.seergroup.srj.gl.camera.ICamera
 import com.seergroup.srj.gl.matrix.Matrix4x4
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import java.nio.IntBuffer
 
 class XYZAxis {
 
@@ -84,7 +81,7 @@ class XYZAxis {
         vao.bind()
         shader.setMat4(
             "uMatrix",
-            (camera.projectionMat * camera.viewMat * Matrix4x4().apply { scale(camera.zoom.x) }).data
+            (camera.projectionMat * camera.viewMat * Matrix4x4().apply { scale(camera.zoom) })
         )
         GLES32.glDrawArrays(GLES32.GL_LINES, 0, count)
         vao.release()

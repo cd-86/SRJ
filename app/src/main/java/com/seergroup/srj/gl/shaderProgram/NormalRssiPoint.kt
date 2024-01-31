@@ -27,7 +27,8 @@ class NormalRssiPoint {
                     gl_Position = uMatrix * vec4(aPos, 0, 1);
                     vColor = aColor;
                 }
-                """.trimIndent(), fragmentSource = """
+                """.trimIndent(),
+            fragmentSource = """
                 #version 320 es
                 precision mediump float;
                 in vec4 vColor;
@@ -74,7 +75,7 @@ class NormalRssiPoint {
     fun draw(camera: ICamera) {
         shader.use()
         vao.bind()
-        shader.setMat4("uMatrix", (camera.projectionMat * camera.viewMat).data)
+        shader.setMat4("uMatrix", camera.projectionMat * camera.viewMat)
         GLES32.glDrawArrays(GLES32.GL_TRIANGLES, 0, count)
         vao.release()
         shader.release()
