@@ -36,6 +36,7 @@ class MainActivity : ComponentActivity() {
         public.screenWidth = resources.displayMetrics.widthPixels
         public.screenHeight = resources.displayMetrics.heightPixels
         public.scale = resources.displayMetrics.density
+        public.assets = assets
         public.bitmapResources["touch_button"] = BitmapFactory.decodeResource(resources, R.drawable.touch_button)
     }
 }

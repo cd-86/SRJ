@@ -95,7 +95,8 @@ class GLRenderer : GLSurfaceView.Renderer {
         UIObject.shader.setInt("uTexture0", 0)
         UIObject.shader.setVec2("uSize", camera.width, camera.height)
         uiList.forEach {
-            it.draw()
+            if (it.visible)
+                it.draw()
         }
         UIObject.shader.release()
         UIObject.texture0.release()

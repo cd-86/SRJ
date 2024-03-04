@@ -1,13 +1,10 @@
 package com.seergroup.srj.gl
 
 import android.content.Context
-import android.graphics.BitmapFactory
 import android.opengl.GLSurfaceView
-import android.util.Log
 import android.view.MotionEvent
-import com.seergroup.srj.R
+import com.seergroup.srj.nativelib.FontFace
 import com.seergroup.srj.gl.matrix.Vec2
-import com.seergroup.srj.gl.shaderProgram.UI.UIObject
 import kotlin.math.sqrt
 
 class GLView(context: Context) : GLSurfaceView(context) {
@@ -19,6 +16,9 @@ class GLView(context: Context) : GLSurfaceView(context) {
         renderer = GLRenderer()
         setRenderer(renderer)
         renderMode = RENDERMODE_WHEN_DIRTY
+
+        val f = FontFace()
+        f.destroy()
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -79,8 +79,6 @@ class GLView(context: Context) : GLSurfaceView(context) {
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_POINTER_UP, MotionEvent.ACTION_CANCEL -> {
 //                for (i in 0 until event.pointerCount) {
-//                    val id = event.getPointerId(i)
-//                    touchMap.remove(id)
 //                }
             }
         }
