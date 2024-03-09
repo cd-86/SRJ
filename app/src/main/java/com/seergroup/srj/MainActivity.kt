@@ -33,10 +33,10 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun initPublic() {
-        public.screenWidth = resources.displayMetrics.widthPixels
-        public.screenHeight = resources.displayMetrics.heightPixels
-        public.scale = resources.displayMetrics.density
-        public.assets = assets
-        public.bitmapResources["touch_button"] = BitmapFactory.decodeResource(resources, R.drawable.touch_button)
+        Global.screenWidth = resources.displayMetrics.widthPixels
+        Global.screenHeight = resources.displayMetrics.heightPixels
+        Global.scale = resources.displayMetrics.density
+        Global.assets = assets
+        Global.bitmapResources["touch_button"] = BitmapFactory.decodeResource(resources, R.drawable.touch_button)
     }
 }

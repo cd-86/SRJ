@@ -3,7 +3,7 @@ package com.seergroup.srj
 import android.content.res.AssetManager
 import android.graphics.Bitmap
 
-object public {
+object Global {
     var screenWidth: Int = 0
     var screenHeight: Int = 0
     var scale: Float = 1f

@@ -2,7 +2,7 @@ package com.seergroup.srj.gl.shaderProgram.UI
 
 import com.seergroup.srj.gl.GLShader
 import com.seergroup.srj.gl.GLTexture
-import com.seergroup.srj.public
+import com.seergroup.srj.Global
 
 object UIObject {
 
@@ -43,7 +43,7 @@ object UIObject {
     ).apply { link() }
 
     val texture0 = GLTexture().apply {
-        public.bitmapResources["touch_button"]?.let { setImage(it) }
+        Global.bitmapResources["touch_button"]?.let { setImage(it) }
     }
 
     fun destroy() {

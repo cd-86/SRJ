@@ -2,9 +2,12 @@ package com.seergroup.srj.gl
 
 import android.content.Context
 import android.opengl.GLSurfaceView
+import android.util.Log
 import android.view.MotionEvent
-import com.seergroup.srj.nativelib.FontFace
+import com.google.protobuf.util.JsonFormat
+import com.seergroup.srj.Global
 import com.seergroup.srj.gl.matrix.Vec2
+import com.seergroup.srj.nativelib.FontFace
 import kotlin.math.sqrt
 
 class GLView(context: Context) : GLSurfaceView(context) {
@@ -16,9 +19,26 @@ class GLView(context: Context) : GLSurfaceView(context) {
         renderer = GLRenderer()
         setRenderer(renderer)
         renderMode = RENDERMODE_WHEN_DIRTY
-
+        // TEST
         val f = FontFace()
         f.destroy()
+        Log.d("TAG-MessageMap", ":1 ")
+        Global.assets?.open("bosch.smap")?.also {
+            Log.d("TAG-MessageMap", ":2 ")
+            var mapBuilder = rbk.protocol.MessageMap.Message_Map.newBuilder()
+            try {
+                JsonFormat.parser().ignoringUnknownFields().merge(it.readBytes().toString(Charsets.UTF_8), mapBuilder)
+                val map = mapBuilder.build()
+                for (p in map.advancedPointListList) {
+                    Log.d("TAG-MessageMap", ": ${p.instanceName}")
+                }
+            } catch (e: Exception) {
+                Log.d("TAG-MessageMap", "Exception: ${e.message}")
+            }
+        }
+
+
+        //TEST END
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {

@@ -2,7 +2,7 @@ package com.seergroup.srj.nativelib
 
 import android.content.res.AssetManager
 import android.util.Log
-import com.seergroup.srj.public
+import com.seergroup.srj.Global
 
 class FontFace {
     data class CharTextureInfo(
@@ -29,7 +29,7 @@ class FontFace {
     private val instance: Long
 
     init {
-        instance = newFontFace(public.assets, "SmileySans-Oblique.ttf")
+        instance = newFontFace(Global.assets, "SmileySans-Oblique.ttf")
         if (instance == 0L) {
             Log.d("TAG::FontFace", "Freetype init: Failed")
         }

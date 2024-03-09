@@ -8,7 +8,7 @@ import com.seergroup.srj.gl.shaderProgram.UI.Button
 import com.seergroup.srj.gl.shaderProgram.UI.IUIElement
 import com.seergroup.srj.gl.shaderProgram.UI.UIObject
 import com.seergroup.srj.gl.shaderProgram.XYZAxis
-import com.seergroup.srj.public
+import com.seergroup.srj.Global
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
@@ -53,20 +53,20 @@ class GLRenderer : GLSurfaceView.Renderer {
         normalRssiPoint = NormalRssiPoint()
 
         // UP
-        var x = public.scale * 100f
-        var y = public.screenHeight - public.scale * 180f
-        var width = public.scale * 60f
-        var height = public.scale * 60f
+        var x = Global.scale * 100f
+        var y = Global.screenHeight - Global.scale * 180f
+        var width = Global.scale * 60f
+        var height = Global.scale * 60f
         val btn_up = Button(x, y, width, height, Button.ButtonType.Up)
         // DOWN
-        y = public.screenHeight - public.scale * 100f
+        y = Global.screenHeight - Global.scale * 100f
         val btn_down = Button(x, y, width, height, Button.ButtonType.Down)
         // LEFT TURN
-        x = public.screenWidth - public.scale * 180f
-        y = public.screenHeight - public.scale * 140f
+        x = Global.screenWidth - Global.scale * 180f
+        y = Global.screenHeight - Global.scale * 140f
         val btn_left_turn = Button(x, y, width, height, Button.ButtonType.LeftTurn)
         // RIGHT TURN
-        x = public.screenWidth - public.scale * 100f
+        x = Global.screenWidth - Global.scale * 100f
         val btn_right_turn = Button(x, y, width, height, Button.ButtonType.RightTurn)
 
         addUIElement(btn_up)
