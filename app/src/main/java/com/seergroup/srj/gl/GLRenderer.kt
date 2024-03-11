@@ -2,13 +2,16 @@ package com.seergroup.srj.gl
 
 import android.opengl.GLES32
 import android.opengl.GLSurfaceView
+import android.util.Log
+import com.google.protobuf.util.JsonFormat
+import com.seergroup.srj.Global
 import com.seergroup.srj.gl.camera.Camera2D
-import com.seergroup.srj.gl.shaderProgram.NormalRssiPoint
 import com.seergroup.srj.gl.shaderProgram.UI.Button
 import com.seergroup.srj.gl.shaderProgram.UI.IUIElement
 import com.seergroup.srj.gl.shaderProgram.UI.UIObject
 import com.seergroup.srj.gl.shaderProgram.XYZAxis
-import com.seergroup.srj.Global
+import com.seergroup.srj.gl.shaderProgram.seermap.RBKMap
+import com.seergroup.srj.gl.shaderProgram.seermap.RBKMapReader
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
@@ -16,7 +19,7 @@ class GLRenderer : GLSurfaceView.Renderer {
     val camera = Camera2D()
     private val uiList = mutableListOf<IUIElement>()
     private lateinit var xyzAxis: XYZAxis
-    private lateinit var normalRssiPoint: NormalRssiPoint
+    private lateinit var rbkMap: RBKMap
 
     fun addUIElement(ui: IUIElement) {
         uiList.add(ui)
@@ -50,7 +53,7 @@ class GLRenderer : GLSurfaceView.Renderer {
         GLES32.glClearColor(0.0f, 0.0f, 0.0f, 1.0f)
         GLES32.glBlendFunc(GLES32.GL_SRC_ALPHA, GLES32.GL_ONE_MINUS_SRC_ALPHA)
         xyzAxis = XYZAxis()
-        normalRssiPoint = NormalRssiPoint()
+        rbkMap = RBKMap()
 
         // UP
         var x = Global.scale * 100f
@@ -73,6 +76,24 @@ class GLRenderer : GLSurfaceView.Renderer {
         addUIElement(btn_down)
         addUIElement(btn_left_turn)
         addUIElement(btn_right_turn)
+
+        // TEST
+        Log.d("TAG-MessageMap", ":1 ")
+        Global.assets?.open("bosch.smap")?.also {
+            Log.d("TAG-MessageMap", ":2 ")
+            var mapBuilder = rbk.protocol.MessageMap.Message_Map.newBuilder()
+            try {
+                JsonFormat.parser().ignoringUnknownFields().merge(it.readBytes().toString(Charsets.UTF_8), mapBuilder)
+                val map = mapBuilder.build()
+                val reader = RBKMapReader()
+                reader.read(map)
+                rbkMap.setNormalPosAndRssiPosVertex(reader.posVertex)
+                rbkMap.setBound(reader.bound, 10F)
+            } catch (e: Exception) {
+                Log.d("TAG-MessageMap", "Exception: ${e.message}")
+            }
+        }
+        // TEST END
     }
 
     override fun onSurfaceChanged(unused: GL10?, width: Int, height: Int) {
@@ -85,7 +106,7 @@ class GLRenderer : GLSurfaceView.Renderer {
 
     override fun onDrawFrame(unused: GL10?) {
         GLES32.glClear(GLES32.GL_COLOR_BUFFER_BIT or GLES32.GL_DEPTH_BUFFER_BIT)
-        normalRssiPoint.draw(camera)
+        rbkMap.draw(camera)
         xyzAxis.draw(camera)
 
         GLES32.glEnable(GLES32.GL_BLEND)

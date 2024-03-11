@@ -52,7 +52,7 @@ class GLShader {
         var geometryShader: Int? = null
         // 几何着色器
         if (geometrySource.isNotEmpty()) {
-            geometryShader = GLES32.glCreateShader(GLES32.GL_FRAGMENT_SHADER)
+            geometryShader = GLES32.glCreateShader(GLES32.GL_GEOMETRY_SHADER)
             GLES32.glShaderSource(geometryShader, geometrySource)
             GLES32.glCompileShader(geometryShader)
             GLES32.glGetShaderiv(geometryShader, GLES32.GL_COMPILE_STATUS, success)
