@@ -89,6 +89,7 @@ class GLRenderer : GLSurfaceView.Renderer {
                 reader.read(map)
                 rbkMap.setNormalPosAndRssiPosVertex(reader.posVertex)
                 rbkMap.setBound(reader.bound, 10F)
+                rbkMap.setLineVertex(reader.lineVertex)
             } catch (e: Exception) {
                 Log.d("TAG-MessageMap", "Exception: ${e.message}")
             }

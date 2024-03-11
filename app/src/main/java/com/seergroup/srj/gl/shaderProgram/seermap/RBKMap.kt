@@ -20,6 +20,14 @@ class RBKMap {
         var count = 0
     }
 
+    private val lineShader: GLShader
+    private val lineBuffObj = object {
+        val vao = GLVertexArrayObject()
+        val vbo = GLBuffer()
+        val ebo = GLBuffer(GLES32.GL_ELEMENT_ARRAY_BUFFER)
+        var count = 0
+    }
+
     init {
         bgShader = GLShader(
             vertexSource = """
@@ -106,6 +114,45 @@ class RBKMap {
         posShader.enableAttributeArray(0)
         posBuffObj.vbo.release()
         posBuffObj.vao.release()
+
+        lineShader = GLShader(
+            vertexSource = """
+                #version 320 es
+                precision mediump float;
+                layout (location = 0) in vec2 aPos;
+                layout (location = 1) in vec4 aColor;
+                out vec4 vColor;
+                uniform mat4 uMatrix;
+                void main()
+                {
+                    gl_Position = uMatrix * vec4(aPos, 0.0, 1.0);
+                    vColor = aColor;
+                }
+                """.trimIndent(),
+            fragmentSource = """
+                #version 320 es
+                precision mediump float;
+                in vec4 vColor;
+                out vec4 FragColor;
+                void main(){
+                    FragColor = vColor;
+                }
+                """.trimIndent()
+        )
+        lineShader.link()
+        lineBuffObj.vao.create()
+        lineBuffObj.vbo.create()
+        lineBuffObj.ebo.create()
+        lineBuffObj.vao.bind()
+        lineBuffObj.vbo.bind()
+        lineBuffObj.ebo.bind()
+        lineShader.setVertexAttribPointer(0, 2, GLES32.GL_FLOAT, 6 * Float.SIZE_BYTES, 0)
+        lineShader.enableAttributeArray(0)
+        lineShader.setVertexAttribPointer(1, 4, GLES32.GL_FLOAT, 6 * Float.SIZE_BYTES, 2 * Float.SIZE_BYTES)
+        lineShader.enableAttributeArray(1)
+        lineBuffObj.vbo.release()
+        lineBuffObj.vao.release()
+        lineBuffObj.ebo.release()
     }
 
     fun clearn() {
@@ -116,6 +163,11 @@ class RBKMap {
         posShader.destroy()
         posBuffObj.vao.destroy()
         posBuffObj.vbo.destroy()
+
+        lineShader.destroy()
+        lineBuffObj.vao.destroy()
+        lineBuffObj.vbo.destroy()
+        lineBuffObj.ebo.destroy()
     }
 
     fun setBound(bound: Bound, w:Float = 0F) {
@@ -142,9 +194,21 @@ class RBKMap {
         posBuffObj.vbo.release()
     }
 
+    fun setLineVertex(vertex: LineVertex) {
+        lineBuffObj.count = vertex.indices.size
+        lineBuffObj.vbo.bind()
+        lineBuffObj.vbo.allocate(vertex.data)
+        lineBuffObj.vbo.release()
+        lineBuffObj.ebo.bind()
+        lineBuffObj.ebo.allocate(vertex.indices)
+        lineBuffObj.ebo.release()
+    }
+
     fun draw(camera: ICamera) {
         val matrix = camera.projectionMat * camera.viewMat
         // 绘制背景
+        GLES32.glEnable(GLES32.GL_BLEND)
+        GLES32.glBlendFunc(GLES32.GL_SRC_ALPHA, GLES32.GL_ONE_MINUS_SRC_ALPHA)
         bgShader.use()
         bgBuffObj.vao.bind()
         bgShader.setMat4("uMatrix", matrix)
@@ -166,5 +230,14 @@ class RBKMap {
         GLES32.glDrawArrays(GLES32.GL_POINTS, 0, posBuffObj.count)
         posBuffObj.vao.release()
         posShader.release()
+        // 绘制地图上的线
+        lineShader.use()
+        lineBuffObj.vao.bind()
+        lineShader.setMat4("uMatrix", matrix)
+        GLES32.glDrawElements(GLES32.GL_TRIANGLES, lineBuffObj.count, GLES32.GL_UNSIGNED_INT, 0)
+        lineBuffObj.vao.release()
+        lineShader.release()
+
+        GLES32.glDisable(GLES32.GL_BLEND)
     }
 }

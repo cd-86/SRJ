@@ -2,10 +2,16 @@ package com.seergroup.srj.gl.shaderProgram.seermap
 
 import com.seergroup.srj.gl.matrix.Color
 import com.seergroup.srj.gl.matrix.Vec2
+import com.seergroup.srj.gl.matrix.Vec3
 import com.seergroup.srj.gl.matrix.Vec4
 import rbk.protocol.MessageMap
+import kotlin.math.PI
+import kotlin.math.abs
+import kotlin.math.atan2
+import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.sin
 import kotlin.math.sqrt
 
 
@@ -223,8 +229,144 @@ class RBKMapReader {
                 calcLineMesh(list, pair.second, Color(18, 150, 219, 120), vertexList, indicesList)
             }
             // 圆弧线
+            arcPathMap.forEach { (_, pair) ->
+                var list: List<Vec2>
+                val x1 = pair.first.startPos.pos.x.toFloat()
+                val y1 = pair.first.startPos.pos.y.toFloat()
+                val x2 = pair.first.controlPos1.x.toFloat()
+                val y2 = pair.first.controlPos1.y.toFloat()
+                val x3 = pair.first.endPos.pos.x.toFloat()
+                val y3 = pair.first.endPos.pos.y.toFloat()
+                val A = x1 * (y2 - y3) - y1 * (x2 - x3) + x2 * y3 - x3 * y2
+                if (abs(A) <= 1E-12) {
+                    list = listOf(Vec2(x1, y1), Vec2(x3, y3))
+                } else {
+                    val x1x1py1y1 = x1 * x1 + y1 * y1
+                    val x2x2py2y2 = x2 * x2 + y2 * y2
+                    val x3x3py3y3 = x3 * x3 + y3 * y3
+
+                    val B = x1x1py1y1 * (-y2 + y3) + x2x2py2y2 * (y1 - y3) + x3x3py3y3 * (y2 - y1)
+                    val C = x1x1py1y1 * (x2 - x3) + x2x2py2y2 * (x3 - x1) + x3x3py3y3 * (x1 - x2)
+                    val D =
+                        x1x1py1y1 * (x3 * y2 - x2 * y3) + x2x2py2y2 * (x1 * y3 - x3 * y1) + x3x3py3y3 * (x2 * y1 - x1 * y2)
+
+                    val x = -B / (2 * A)
+                    val y = -C / (2 * A)
+                    val r = sqrt((B * B + C * C - 4 * A * D) / (4 * A * A))
+
+                    val theta1: Float = atan2(y1 - y, x1 - x)
+                    var theta3: Float = atan2(y3 - y, x3 - x)
+
+                    if (((x2 - x1) * (y3 - y2) - (y2 - y1) * (x3 - x2)) > 0) {
+                        if (theta1 > theta3) theta3 = (theta3 + 2 * PI).toFloat()
+                    } else {
+                        if (theta1 < theta3) theta3 = (theta3 - 2 * PI).toFloat()
+                    }
+                    list = List<Vec2>(CURVE_PRECISION) {
+                        val theta = theta3 + (theta1 - theta3) * it / (CURVE_PRECISION - 1)
+                        Vec2(x + r * cos(theta), y + r * sin(theta))
+                    }
+                }
+                calcLineMesh(list, pair.second, Color(134, 13, 214, 160), vertexList, indicesList)
+            }
             // B样条线
+            val N = 5
+            val K = 4
+            val knots = FloatArray(N + K + 1)
+            NURBS6Map.forEach { (_, pair) ->
+                val inPoints = arrayOf(
+                    Vec3(
+                        pair.first.startPos.pos.x.toFloat(),
+                        pair.first.startPos.pos.y.toFloat(),
+                        pair.first.startPos.pos.z.toFloat(),
+                    ),
+                    Vec3(
+                        pair.first.controlPos1.x.toFloat(),
+                        pair.first.controlPos1.y.toFloat(),
+                        pair.first.controlPos1.y.toFloat(),
+                    ),
+                    Vec3(
+                        pair.first.controlPos2.x.toFloat(),
+                        pair.first.controlPos2.y.toFloat(),
+                        pair.first.controlPos2.y.toFloat(),
+                    ),
+                    Vec3(
+                        pair.first.controlPos3.x.toFloat(),
+                        pair.first.controlPos3.y.toFloat(),
+                        pair.first.controlPos3.y.toFloat(),
+                    ),
+                    Vec3(
+                        pair.first.controlPos4.x.toFloat(),
+                        pair.first.controlPos4.y.toFloat(),
+                        pair.first.controlPos4.y.toFloat(),
+                    ),
+                    Vec3(
+                        pair.first.endPos.pos.x.toFloat(),
+                        pair.first.endPos.pos.y.toFloat(),
+                        pair.first.endPos.pos.z.toFloat(),
+                    ),
+                )
+                // generateKnots
+                for (i in 0 until K) {
+                    knots[i] = 0.0F
+                }
+                for (i in N + 1 until N + K + 1) {
+                    knots[i] = 1.0F
+                }
+                var denominator = 0.0F
+                var numerator = FloatArray(N + 2 - K)
+                for (loop1 in K..N + 1) {
+                    var temp = 0.0F
+                    for (loop2 in loop1 - K..loop1 - 2) {
+                        val diff_x: Float = inPoints[loop2 + 1].x - inPoints[loop2].x
+                        val diff_y: Float = inPoints[loop2 + 1].y - inPoints[loop2].y
+                        temp += sqrt(diff_x * diff_x + diff_y * diff_y)
+                    }
+                    denominator += temp
+                    numerator[loop1] = temp
+                }
+                for (loop1 in K..N + 1) {
+                    knots[loop1] = knots[loop1 - 1] + numerator[loop1 - K] / denominator
+                }
+                // generatePath
+                val list = mutableListOf<Vec2>()
+                val EPSILON = 1E-10F + 0.01F
+                var u = 0.0F
+                while (u <= 1.0F) {
+                    var temp_fenzi_x = 0.0F
+                    var temp_fenzi_y = 0.0F
+                    var temp_fenmu = 0.0F
+                    for (i in 0..N) {
+                        val v = inPoints[i].z * bValue(knots, i, K, u)
+                        temp_fenzi_x += inPoints[i].x * v
+                        temp_fenzi_y += inPoints[i].y * v
+                        temp_fenmu += v
+                    }
+                    if (temp_fenmu != 0.0F) {
+                        list.add(Vec2(temp_fenzi_x / temp_fenmu, temp_fenzi_y / temp_fenmu))
+                    }
+                    u += EPSILON
+                }
+                list.add(0, Vec2(inPoints.first().x, inPoints.first().y))
+                list.add(Vec2(inPoints.last().x, inPoints.last().y))
+                calcLineMesh(list, pair.second, Color(134, 13, 214, 160), vertexList, indicesList)
+            }
             return LineVertex(vertexList.toFloatArray(), indicesList.toIntArray())
+        }
+
+        private fun bValue(knots: FloatArray, i: Int, k: Int, u: Float): Float {
+            if (k == 1) {
+                return if (knots[i] < u && u <= knots[i + 1]) 1F else 0F
+            }
+            var front = 0.0F
+            var after = 0.0F
+            if (u - knots[i] != 0F && knots[i + k - 1] - knots[i] != 0F) {
+                front = (u - knots[i]) / (knots[i + k - 1] - knots[i])
+            }
+            if (knots[i + k] - u != 0.0F && knots[i + k] - knots[i + 1] != 0.0F) {
+                after = (knots[i + k] - u) / (knots[i + k] - knots[i + 1])
+            }
+            return front * bValue(knots, i, k - 1, u) + after * bValue(knots, i + 1, k - 1, u)
         }
 
         private fun calcLineMesh(
