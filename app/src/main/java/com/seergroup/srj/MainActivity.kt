@@ -1,6 +1,5 @@
 package com.seergroup.srj
 
-import android.graphics.BitmapFactory
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -37,6 +36,5 @@ class MainActivity : ComponentActivity() {
         Global.screenHeight = resources.displayMetrics.heightPixels
         Global.scale = resources.displayMetrics.density
         Global.assets = assets
-        Global.bitmapResources["touch_button"] = BitmapFactory.decodeResource(resources, R.drawable.touch_button)
     }
 }

@@ -1,14 +1,24 @@
 package com.seergroup.srj
 
 import android.content.res.AssetManager
-import android.graphics.Bitmap
+import com.seergroup.srj.nativelib.FontFace
 
 object Global {
     var screenWidth: Int = 0
     var screenHeight: Int = 0
     var scale: Float = 1f
     var assets: AssetManager? = null
-    val bitmapResources = mutableMapOf<String, Bitmap>()
+        set(value) {
+            if (field == null) {
+                field = value
+                fontFace = FontFace()
+            }
+        }
+    var fontFace: FontFace? = null
+        set(value) {
+            field?.destroy()
+            field = value
+        }
 
 
     fun dpToPx(dp: Float): Float {

@@ -1,10 +1,13 @@
 package com.seergroup.srj.gl.shaderProgram.seermap
 
+import com.seergroup.srj.Global
 import com.seergroup.srj.gl.matrix.Color
+import com.seergroup.srj.gl.matrix.OpenGLColor
 import com.seergroup.srj.gl.matrix.Vec2
 import com.seergroup.srj.gl.matrix.Vec3
-import com.seergroup.srj.gl.matrix.Vec4
+import com.seergroup.srj.nativelib.FontFace
 import rbk.protocol.MessageMap
+import rbk.protocol.model.MessageModel
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.atan2
@@ -19,26 +22,43 @@ class RBKMapReader {
     var bound: Bound = Bound()
     var posVertex: PosVertex = PosVertex()
     var lineVertex: LineVertex = LineVertex()
+    var meshVertex: MeshVertex = MeshVertex()
 
-    fun read(rbkMap: MessageMap.Message_Map) {
+    fun read(rbkMap: MessageMap.Message_Map, model: MessageModel.Message_Model) {
         bound = Bound()
         posVertex = readNormalPosAndRssiPos(rbkMap.normalPosListList, rbkMap.rssiPosListList, bound)
         lineVertex = readAdvancedCurveAndAdvancedLine(
             rbkMap.advancedCurveListList,
             rbkMap.advancedLineListList
         )
+        meshVertex = readMapMesh(
+            model,
+            rbkMap.reflectorPosListList,
+            rbkMap.advancedAreaListList,
+            rbkMap.advancedPointListList,
+            rbkMap.binLocationsListList,
+            rbkMap.tagPosListList,
+            bound
+        )
     }
 
     companion object {
         const val CURVE_PRECISION = 100
+        const val CIRCLE_PRECISION = 100
+        const val MESH_TYPE_COLOR = 0F
+        const val MESH_TYPE_FONT = 1F
+        const val MESH_TYPE_LINE = 2F
+        const val MESH_TYPE_TAG = 3F
+        const val MESH_TYPE_SPIN = 4F
+        const val MESH_TYPE_SCENE_POINTS = 5F
         /******************************************************************************************/
         /**
-         * 读取 NormalPos 和 RSSIPos，并将它们组合到一个浮点数组中， 此函数还可以根据提供的边界对象更新边界信息。
+         * 读取 NormalPos 和 RSSIPos，创建 points 图元的顶点数据， 如果提供 Bound 则更新地图边界信息。
          *
          * @param normalPosList 包含 NormalPos 的列表
          * @param rssiPosList 包含 RSSIPos 的列表
          * @param bound 可选的边界对象，如果提供，函数将更新该对象的xMax、yMax、xMin和yMin属性，以包含所有输入位置的范围。
-         * @return PosVertex
+         * @return 顶点数据 和 顶点的数量
          */
         fun readNormalPosAndRssiPos(
             normalPosList: List<MessageMap.Message_MapPos>,
@@ -86,11 +106,11 @@ class RBKMapReader {
 
         /*******************************************************************************************/
         /**
-         * 读取 AdvancedCurve 和 AdvancedLine，并将它们组合到一个浮点数组中。
+         * 读取 AdvancedCurve 和 AdvancedLine，并创建 triangles 图元顶点数据
          *
          * @param advancedCurveList 包含 AdvancedCurve 的列表
          * @param advancedLineList 包含 AdvancedLine 的列表
-         * @return LineVertex
+         * @return 顶点 和 triangles 索引
          */
         fun readAdvancedCurveAndAdvancedLine(
             advancedCurveList: List<MessageMap.Message_AdvancedCurve>,
@@ -382,7 +402,7 @@ class RBKMapReader {
         private fun calcLineMesh(
             points: List<Vec2>,
             way: Int,
-            color: Vec4,
+            color: OpenGLColor,
             vertexList: MutableList<Float>,
             indicesList: MutableList<Int>
         ) {
@@ -413,8 +433,8 @@ class RBKMapReader {
                 p2y = p1y + offsetY
                 vertexList.addAll(
                     arrayOf(
-                        p1x, p1y, color.x, color.y, color.z, color.w,
-                        p2x, p2y, color.x, color.y, color.z, color.w
+                        p1x, p1y, color.r, color.g, color.b, color.a,
+                        p2x, p2y, color.r, color.g, color.b, color.a
                     )
                 )
                 diffX = tempDiffX
@@ -430,8 +450,8 @@ class RBKMapReader {
             p2y = p1y + offsetY
             vertexList.addAll(
                 arrayOf(
-                    p1x, p1y, color.x, color.y, color.z, color.w,
-                    p2x, p2y, color.x, color.y, color.z, color.w
+                    p1x, p1y, color.r, color.g, color.b, color.a,
+                    p2x, p2y, color.r, color.g, color.b, color.a
                 )
             )
             // 索引
@@ -483,8 +503,285 @@ class RBKMapReader {
                 )
             }
         }
-        /*******************************************************************************************/
 
+        /*******************************************************************************************/
+        /**
+         * 读取 map 中其他的数据， 根据 模型 创建 triangles 图元的顶点数据， 如果提供 Bound 则更新地图边界信息。
+         *
+         * @param model 机器人 模型
+         * @param reflectorPosList 包含 reflectorPos 的列表
+         * @param advancedAreaList 包含 advancedArea 的列表
+         * @param advancedPointList 包含 advancedPoint 的列表
+         * @param binLocationsList 包含 binLocations 的列表
+         * @param tagPosList 包含 tagPos 的列表
+         * @param bound 可选的边界对象，如果提供，函数将更新该对象的xMax、yMax、xMin和yMin属性，以包含所有输入位置的范围。
+         * @return 顶点 和 triangles 索引
+         */
+        fun readMapMesh(
+            model: MessageModel.Message_Model,
+            reflectorPosList: List<MessageMap.Message_ReflectorPos>,
+            advancedAreaList: List<MessageMap.Message_AdvancedArea>,
+            advancedPointList: List<MessageMap.Message_AdvancedPoint>,
+            binLocationsList: List<MessageMap.Message_BinLocations>,
+            tagPosList: List<MessageMap.Message_tagPos>,
+            bound: Bound? = null
+        ): MeshVertex {
+            val vertexList = mutableListOf<Float>()
+            val indicesList = mutableListOf<Int>()
+            // reflectorPos
+            reflectorPosMesh(vertexList, indicesList, reflectorPosList)
+            // AdvancedArea
+            advancedAreaMesh(vertexList, indicesList, advancedAreaList)
+            // AdvancedPoint
+            advancedPointMesh(vertexList, indicesList, advancedPointList)
+            // BinLocations
+            binLocationsMesh(vertexList, indicesList, binLocationsList)
+            // TagPos
+            tagPosMesh(vertexList, indicesList, tagPosList)
+
+            return MeshVertex(vertexList.toFloatArray(), indicesList.toIntArray())
+        }
+
+        private fun reflectorPosMesh(
+            vertexList: MutableList<Float>,
+            indicesList: MutableList<Int>,
+            reflectorPosList: List<MessageMap.Message_ReflectorPos>
+        ) {
+            val pen = Color(1, 81, 152, 150).toOpenGLColor()
+            val brush = Color(255, 0, 0, 150).toOpenGLColor()
+            reflectorPosList.forEach {
+                val r = it.width.toFloat() / 2;
+                val indx: Int = vertexList.size / 9
+                if (it.type == "plane") {
+                    val x = it.x.toFloat()
+                    val y = it.y.toFloat()
+
+                    val p1x = x - r
+                    val p1y = y + r
+                    val p2x = x + r
+                    val p2y = p1y
+                    val p3x = p2x
+                    val p3y = y - r
+                    val p4x = p1x
+                    val p4y = p3y
+
+                    val p5x = p1x - 0.005F
+                    val p5y = p1y + 0.005F
+                    val p6x = p2x + 0.005F
+                    val p6y = p5y
+                    val p7x = p6x
+                    val p7y = p3y - 0.005F
+                    val p8x = p5x
+                    val p8y = p7y
+
+                    val p9x = p1x + 0.005F
+                    val p9y = p1x - 0.005F
+                    val p10x = p2x - 0.005F
+                    val p10y = p9y
+                    val p11x = p10x
+                    val p11y = p3y + 0.005F
+                    val p12x = p9x
+                    val p12y = p11y
+
+                    vertexList.addAll(
+                        arrayOf(
+                            p1x, p1y, 0F, 0F, 0F, brush.r, brush.g, brush.b, brush.a,
+                            p2x, p2y, 0F, 0F, 0F, brush.r, brush.g, brush.b, brush.a,
+                            p3x, p3y, 0F, 0F, 0F, brush.r, brush.g, brush.b, brush.a,
+                            p4x, p4y, 0F, 0F, 0F, brush.r, brush.g, brush.b, brush.a,
+
+                            p5x, p5y, 0F, 0F, 0F, pen.r, pen.g, pen.b, pen.a,
+                            p6x, p6y, 0F, 0F, 0F, pen.r, pen.g, pen.b, pen.a,
+                            p7x, p7y, 0F, 0F, 0F, pen.r, pen.g, pen.b, pen.a,
+                            p8x, p8y, 0F, 0F, 0F, pen.r, pen.g, pen.b, pen.a,
+
+                            p9x, p9y, 0F, 0F, 0F, pen.r, pen.g, pen.b, pen.a,
+                            p10x, p10y, 0F, 0F, 0F, pen.r, pen.g, pen.b, pen.a,
+                            p11x, p11y, 0F, 0F, 0F, pen.r, pen.g, pen.b, pen.a,
+                            p12x, p12y, 0F, 0F, 0F, pen.r, pen.g, pen.b, pen.a,
+                        )
+                    )
+                    indicesList.addAll(
+                        arrayOf(
+                            indx, indx + 1, indx + 2, indx, indx + 2, indx + 3,
+                            indx + 4, indx + 5, indx + 8, indx + 5, indx + 8, indx + 9,
+                            indx + 5, indx + 9, indx + 10, indx + 6, indx + 5, indx + 10,
+                            indx + 6, indx + 7, indx + 10, indx + 7, indx + 10, indx + 11,
+                            indx + 4, indx + 8, indx + 11, indx + 4, indx + 7, indx + 11
+                        )
+                    )
+
+                } else { // cylinder
+                    val d = FloatArray(CIRCLE_PRECISION * 27) // 3 * 9
+                    val r2 = r - 0.005F
+                    val r3 = r + 0.005F
+                    for (i in 0 until CIRCLE_PRECISION) {
+                        val v: Float = (i / (CIRCLE_PRECISION - 1) * PI * 2).toFloat()
+                        val c: Float = cos(v)
+                        val s: Float = sin(v)
+                        var j = i * 9
+                        d[j] = it.x.toFloat() + r * c
+                        d[j + 1] = it.y.toFloat() + r * s
+                        d[j + 5] = brush.r
+                        d[j + 6] = brush.g
+                        d[j + 7] = brush.b
+                        d[j + 8] = brush.a
+                        j = (i + CIRCLE_PRECISION) * 9
+                        d[j] = it.x.toFloat() + r2 * c
+                        d[j + 1] = it.y.toFloat() + r2 * s
+                        d[j + 5] = pen.r
+                        d[j + 6] = pen.g
+                        d[j + 7] = pen.b
+                        d[j + 8] = pen.a
+                        j = (i + CIRCLE_PRECISION + CIRCLE_PRECISION) * 9
+                        d[j] = it.x.toFloat() + r3 * c
+                        d[j + 1] = it.y.toFloat() + r3 * s
+                        d[j + 5] = pen.r
+                        d[j + 6] = pen.g
+                        d[j + 7] = pen.b
+                        d[j + 8] = pen.a
+                    }
+                    vertexList.addAll(d.toList())
+                    for (i in 1 until CIRCLE_PRECISION - 1) {
+                        indicesList.addAll(arrayOf(indx, indx + i, indx + i + 1))
+                    }
+                    for (i in 0 until CIRCLE_PRECISION) {
+                        val inner = indx + i + CIRCLE_PRECISION
+                        val outer = inner + CIRCLE_PRECISION
+                        indicesList.addAll(
+                            arrayOf(inner, inner + 1, outer, inner + 1, outer, outer + 1)
+                        )
+                    }
+                }
+            }
+        }
+
+        private fun advancedAreaMesh(
+            vertexList: MutableList<Float>,
+            indicesList: MutableList<Int>,
+            advancedAreaList: List<MessageMap.Message_AdvancedArea>
+        ) {
+            advancedAreaList.forEach {
+                val indx: Int = vertexList.size / 9
+                val c = cos(it.dir).toFloat()
+                val s = sin(it.dir).toFloat()
+                val x1 = it.posGroupList[0].x.toFloat()
+                val y1 = it.posGroupList[0].y.toFloat()
+                val x2 = it.posGroupList[1].x.toFloat()
+                val y2 = it.posGroupList[1].y.toFloat()
+                val x3 = it.posGroupList[2].x.toFloat()
+                val y3 = it.posGroupList[2].y.toFloat()
+                val x4 = it.posGroupList[3].x.toFloat()
+                val y4 = it.posGroupList[3].y.toFloat()
+                val x5 = x1 + 0.005F * c - 0.005F * s
+                val y5 = y1 + 0.005F * s + 0.005F * c
+                val x6 = x1 - 0.005F * c - (-0.005F) * s
+                val y6 = y1 - 0.005F * s + (-0.005F) * c
+                val x7 = x2 - 0.005F * c - 0.005F * s
+                val y7 = y2 - 0.005F * s + 0.005F * c
+                val x8 = x2 + 0.005F * c - (-0.005F) * s
+                val y8 = y2 + 0.005F * s + (-0.005F) * c
+                val x9 = x3 + 0.005F * c - 0.005F * s
+                val y9 = y3 + 0.005F * s + 0.005F * c
+                val x10 = x3 - 0.005F * c - (-0.005F) * s
+                val y10 = y3 - 0.005F * s + (-0.005F) * c
+                val x11 = x4 - 0.005F * c - 0.005F * s
+                val y11 = y4 - 0.005F * s + 0.005F * c
+                val x12 = x4 + 0.005F * c - (-0.005F) * s
+                val y12 = y4 + 0.005F * s + (-0.005F) * c
+
+                val brush = Color(
+                    it.attribute.colorBrush ushr 24,
+                    it.attribute.colorBrush ushr 16 and 0xFF,
+                    it.attribute.colorBrush ushr 8 and 0xFF,
+                    25
+                ).toOpenGLColor()
+                val pen = Color(
+                    it.attribute.colorBrush ushr 24,
+                    it.attribute.colorBrush ushr 16 and 0xFF,
+                    it.attribute.colorBrush ushr 8 and 0xFF,
+                    25
+                ).toOpenGLColor()
+
+                vertexList.addAll(
+                    arrayOf(
+                        x1, y1, 0F, 0F, MESH_TYPE_COLOR, brush.r, brush.g, brush.b, brush.a,
+                        x2, y2, 0F, 0F, MESH_TYPE_COLOR, brush.r, brush.g, brush.b, brush.a,
+                        x3, y3, 0F, 0F, MESH_TYPE_COLOR, brush.r, brush.g, brush.b, brush.a,
+                        x4, y4, 0F, 0F, MESH_TYPE_COLOR, brush.r, brush.g, brush.b, brush.a,
+                        x5, y5, 0F, 0F, MESH_TYPE_COLOR, pen.r, pen.g, pen.b, pen.a,
+                        x6, y6, 0F, 0F, MESH_TYPE_COLOR, pen.r, pen.g, pen.b, pen.a,
+                        x7, y7, 0F, 0F, MESH_TYPE_COLOR, pen.r, pen.g, pen.b, pen.a,
+                        x8, y8, 0F, 0F, MESH_TYPE_COLOR, pen.r, pen.g, pen.b, pen.a,
+                        x9, y9, 0F, 0F, MESH_TYPE_COLOR, pen.r, pen.g, pen.b, pen.a,
+                        x10, y10, 0F, 0F, MESH_TYPE_COLOR, pen.r, pen.g, pen.b, pen.a,
+                        x11, y11, 0F, 0F, MESH_TYPE_COLOR, pen.r, pen.g, pen.b, pen.a,
+                        x12, y12, 0F, 0F, MESH_TYPE_COLOR, pen.r, pen.g, pen.b, pen.a,
+                    )
+                )
+                indicesList.addAll(
+                    arrayOf(
+                        indx, indx + 1, indx + 2, indx, indx + 2, indx + 3,
+                        indx + 4, indx + 5, indx + 6, indx + 5, indx + 6, indx + 7,
+                        indx + 6, indx + 7, indx + 9, indx + 7, indx + 8, indx + 9,
+                        indx + 8, indx + 9, indx + 11, indx + 8, indx + 10, indx + 11,
+                        indx + 10, indx + 11, indx + 4, indx + 10, indx + 4, indx + 5
+                    )
+                )
+                val name =
+                    if (it.className == "AreaDescription") it.desc.toString() else it.className + it.instanceName
+                val x = (x1 + x2 + x3 + x4) / 4
+                val y = (y1 + y2 + y3 + y4) / 4
+                val fv = Global.fontFace!!.getVertexData(
+                    name,
+                    x,
+                    y,
+                    FontFace.Align.Center,
+                    indx + 12,
+                    0.003F
+                )
+                fv.FontTexCoordList.forEach { v ->
+                    vertexList.addAll(
+                        arrayOf(
+                            v.x,
+                            v.y,
+                            v.xTexCoord,
+                            v.yTexCoord,
+                            MESH_TYPE_FONT,
+                            pen.r,
+                            pen.g,
+                            pen.b,
+                            pen.a
+                        )
+                    )
+                }
+                indicesList.addAll(fv.indices)
+            }
+        }
+
+        private fun advancedPointMesh(
+            vertexList: MutableList<Float>,
+            indicesList: MutableList<Int>,
+            advancedPointList: List<MessageMap.Message_AdvancedPoint>
+        ) {
+// TODO
+        }
+
+        private fun binLocationsMesh(
+            vertexList: MutableList<Float>,
+            indicesList: MutableList<Int>,
+            binLocationsList: List<MessageMap.Message_BinLocations>
+        ) {
+// TODO
+        }
+
+        private fun tagPosMesh(
+            vertexList: MutableList<Float>,
+            indicesList: MutableList<Int>,
+            tagPosList: List<MessageMap.Message_tagPos>
+        ) {
+// TODO
+        }
     }
 
 }

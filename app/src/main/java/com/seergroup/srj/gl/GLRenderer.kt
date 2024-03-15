@@ -12,6 +12,8 @@ import com.seergroup.srj.gl.shaderProgram.UI.UIObject
 import com.seergroup.srj.gl.shaderProgram.XYZAxis
 import com.seergroup.srj.gl.shaderProgram.seermap.RBKMap
 import com.seergroup.srj.gl.shaderProgram.seermap.RBKMapReader
+import rbk.protocol.MessageMap
+import rbk.protocol.model.MessageModel
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 
@@ -79,21 +81,25 @@ class GLRenderer : GLSurfaceView.Renderer {
 
         // TEST
         Log.d("TAG-MessageMap", ":1 ")
-        Global.assets?.open("bosch.smap")?.also {
-            Log.d("TAG-MessageMap", ":2 ")
-            var mapBuilder = rbk.protocol.MessageMap.Message_Map.newBuilder()
-            try {
-                JsonFormat.parser().ignoringUnknownFields().merge(it.readBytes().toString(Charsets.UTF_8), mapBuilder)
-                val map = mapBuilder.build()
-                val reader = RBKMapReader()
-                reader.read(map)
-                rbkMap.setNormalPosAndRssiPosVertex(reader.posVertex)
-                rbkMap.setBound(reader.bound, 10F)
-                rbkMap.setLineVertex(reader.lineVertex)
-            } catch (e: Exception) {
-                Log.d("TAG-MessageMap", "Exception: ${e.message}")
-            }
+        if(Global.assets == null)
+            return
+        var map: MessageMap.Message_Map
+        var model: MessageModel.Message_Model
+        Global.assets!!.open("FCWL.smap").use {
+            val mapBuilder = MessageMap.Message_Map.newBuilder()
+            JsonFormat.parser().merge(it.readBytes().toString(Charsets.UTF_8), mapBuilder)
+            map = mapBuilder.build()
         }
+        Global.assets!!.open("robot.model").use {
+            val modelBuilder = MessageModel.Message_Model.newBuilder()
+            JsonFormat.parser().merge(it.readBytes().toString(Charsets.UTF_8), modelBuilder)
+            model = modelBuilder.build()
+        }
+        val reader = RBKMapReader()
+        reader.read(map, model)
+        rbkMap.setNormalPosAndRssiPosVertex(reader.posVertex)
+        rbkMap.setBound(reader.bound, 10F)
+        rbkMap.setLineVertex(reader.lineVertex)
         // TEST END
     }
 

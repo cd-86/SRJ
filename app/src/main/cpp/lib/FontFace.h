@@ -21,15 +21,6 @@ public:
         int advance;
         uint xOffset;
     };
-    enum AlignmentFlag {
-        AlignLeft = 0x0001,
-        AlignRight = 0x0002,
-        AlignHCenter = 0x0004,
-        AlignTop = 0x0080,
-        AlignBottom = 0x0010,
-        AlignVCenter = 0x0020,
-        AlignCenter = AlignVCenter | AlignHCenter
-    };
     FontFace(FT_Byte *file_base, FT_Long file_size);
 
     ~FontFace();

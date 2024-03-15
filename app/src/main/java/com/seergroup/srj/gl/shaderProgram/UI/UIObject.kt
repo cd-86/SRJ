@@ -1,8 +1,10 @@
 package com.seergroup.srj.gl.shaderProgram.UI
 
+import android.graphics.BitmapFactory
+import android.util.Log
+import com.seergroup.srj.Global
 import com.seergroup.srj.gl.GLShader
 import com.seergroup.srj.gl.GLTexture
-import com.seergroup.srj.Global
 
 object UIObject {
 
@@ -43,7 +45,13 @@ object UIObject {
     ).apply { link() }
 
     val texture0 = GLTexture().apply {
-        Global.bitmapResources["touch_button"]?.let { setImage(it) }
+        try {
+            Global.assets?.open("texture/touch_button.png").use {
+                setImage(BitmapFactory.decodeStream(it))
+            }
+        } catch (e:Exception){
+            Log.d("TAG-${this.javaClass.name}", e.message.toString())
+        }
     }
 
     fun destroy() {
