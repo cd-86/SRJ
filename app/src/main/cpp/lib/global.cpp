@@ -1,8 +1,8 @@
 //
 // Created by User on 2024/3/3.
-//
 #include "global.h"
 #include "string"
+//
 
 jlong newFontFace(JNIEnv *env, jobject thiz, jobject am, jstring file_name) {
     // 获取 assetManager 对象
@@ -18,11 +18,11 @@ jlong newFontFace(JNIEnv *env, jobject thiz, jobject am, jstring file_name) {
         return 0;
     }
     size_t file_size = AAsset_getLength(asset);
+    // 不要释放
     FT_Byte *file_base = new FT_Byte[file_size];
     AAsset_read(asset, file_base, file_size);
     AAsset_close(asset);
     FontFace *fontFace = new FontFace(file_base, file_size);
-//    delete[] file_base;
     return reinterpret_cast<jlong>(fontFace);
 }
 

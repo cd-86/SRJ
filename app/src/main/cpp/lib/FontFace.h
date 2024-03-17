@@ -39,7 +39,7 @@ private:
     FT_Library m_ft;
     FT_Face m_face;
     std::string m_errorString;
-
+    FT_Byte *m_file_base{nullptr};
     FT_Byte *m_textureData{nullptr};
     uint m_textureWidth{0};
     uint m_textureHeight{0};

@@ -10,6 +10,7 @@
 #define CHAR_Y_OFFSET 2
 
 FontFace::FontFace(FT_Byte *file_base, FT_Long file_size) {
+    m_file_base = file_base;
     if (FT_Init_FreeType(&m_ft)) {
         m_errorString = "ERROR::FREETYPE: Could not init FreeType Library";
         return;
@@ -26,6 +27,7 @@ FontFace::FontFace(FT_Byte *file_base, FT_Long file_size) {
 FontFace::~FontFace() {
     FT_Done_Face(m_face);
     FT_Done_FreeType(m_ft);
+    delete[] m_file_base;
     delete[] m_textureData;
 }
 
