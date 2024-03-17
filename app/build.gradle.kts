@@ -76,8 +76,7 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
-
+    // protobuf
     implementation("com.google.protobuf:protobuf-java-util:3.25.3")
     implementation("com.google.protobuf:protobuf-java:3.25.3")
-
 }

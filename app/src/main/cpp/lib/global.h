@@ -12,6 +12,13 @@ jstring getErrorString(JNIEnv *env, jobject thiz, jlong instance);
 
 jobject getCharacter(JNIEnv *env, jobject thiz, jlong instance, jchar character);
 
+jint getTextureWidth(JNIEnv *env, jobject thiz, jlong instance);
+
+jint getTextureHeight(JNIEnv *env, jobject thiz, jlong instance);
+
+jobject getTextureData(JNIEnv *env, jobject thiz, jlong instance);
+
+
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
     JNIEnv *env;
     if (vm->GetEnv(reinterpret_cast<void **>(&env), JNI_VERSION_1_6) != JNI_OK) {
@@ -23,11 +30,15 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved) {
 
     // Register your class' native methods.
     static const JNINativeMethod methods[] = {
-            {"newFontFace",    "(Landroid/content/res/AssetManager;Ljava/lang/String;)J", reinterpret_cast<void *>(newFontFace)},
-            {"deleteFontFace", "(J)V",                                                    reinterpret_cast<void *>(deleteFontFace)},
-            {"getErrorString", "(J)Ljava/lang/String;",                                reinterpret_cast<void *>(getErrorString)},
-            {"getCharacter", "(JC)Lcom/seergroup/srj/nativelib/FontFace$CharTextureInfo;", reinterpret_cast<void *>(getCharacter)}
-            };
+            {"newFontFace",      "(Landroid/content/res/AssetManager;Ljava/lang/String;)J",    reinterpret_cast<void *>(newFontFace)},
+            {"deleteFontFace",   "(J)V",                                                       reinterpret_cast<void *>(deleteFontFace)},
+            {"getErrorString",   "(J)Ljava/lang/String;",                                      reinterpret_cast<void *>(getErrorString)},
+            {"getCharacter",     "(JC)Lcom/seergroup/srj/nativelib/FontFace$CharTextureInfo;", reinterpret_cast<void *>(getCharacter)},
+            {"getTextureWidth",  "(J)I",                                                       reinterpret_cast<void *>(getTextureWidth)},
+            {"getTextureHeight", "(J)I",                                                       reinterpret_cast<void *>(getTextureHeight)},
+            {"getTextureData", "(J)Ljava/nio/ByteBuffer;",                                 reinterpret_cast<void *>(getTextureData)},
+
+    };
     int rc = env->RegisterNatives(c, methods, sizeof(methods) / sizeof(JNINativeMethod));
     if (rc != JNI_OK) return rc;
 

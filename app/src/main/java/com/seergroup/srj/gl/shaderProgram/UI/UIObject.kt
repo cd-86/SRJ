@@ -50,7 +50,7 @@ object UIObject {
                 setImage(BitmapFactory.decodeStream(it))
             }
         } catch (e:Exception){
-            Log.d("TAG-${this.javaClass.name}", e.message.toString())
+            Log.d("SRJ-${this.javaClass.name}", e.message.toString())
         }
     }
 

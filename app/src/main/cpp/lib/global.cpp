@@ -2,6 +2,7 @@
 // Created by User on 2024/3/3.
 //
 #include "global.h"
+#include "string"
 
 jlong newFontFace(JNIEnv *env, jobject thiz, jobject am, jstring file_name) {
     // 获取 assetManager 对象
@@ -21,7 +22,7 @@ jlong newFontFace(JNIEnv *env, jobject thiz, jobject am, jstring file_name) {
     AAsset_read(asset, file_base, file_size);
     AAsset_close(asset);
     FontFace *fontFace = new FontFace(file_base, file_size);
-    delete[] file_base;
+//    delete[] file_base;
     return reinterpret_cast<jlong>(fontFace);
 }
 
@@ -46,4 +47,22 @@ jobject getCharacter(JNIEnv *env, jobject thiz, jlong instance, jchar character)
     jmethodID method = env->GetMethodID(cls, "<init>", "(IIIIII)V");
     if (method == nullptr) return nullptr;
     return env->NewObject(cls, method, (int)info.width, (int)info.height, info.bearingX, info.bearingY, info.advance, (int)info.xOffset);
+}
+
+jint getTextureWidth(JNIEnv *env, jobject thiz, jlong instance) {
+    if (!instance) return 0;
+    FontFace *fontFace = reinterpret_cast<FontFace *>(instance);
+    return fontFace->getTextureWidth();
+}
+
+jint getTextureHeight(JNIEnv *env, jobject thiz, jlong instance) {
+    if (!instance) return 0;
+    FontFace *fontFace = reinterpret_cast<FontFace *>(instance);
+    return fontFace->getTextureHeight();
+}
+
+jobject getTextureData(JNIEnv *env, jobject thiz, jlong instance) {
+    if (!instance) return env->NewDirectByteBuffer(nullptr, 0);
+    FontFace *fontFace = reinterpret_cast<FontFace *>(instance);
+    return env->NewDirectByteBuffer((void *) fontFace->getTextureData(), fontFace->getTextureWidth() * fontFace->getTextureHeight());
 }

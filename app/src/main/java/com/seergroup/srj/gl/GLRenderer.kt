@@ -2,7 +2,6 @@ package com.seergroup.srj.gl
 
 import android.opengl.GLES32
 import android.opengl.GLSurfaceView
-import android.util.Log
 import com.google.protobuf.util.JsonFormat
 import com.seergroup.srj.Global
 import com.seergroup.srj.gl.camera.Camera2D
@@ -80,7 +79,6 @@ class GLRenderer : GLSurfaceView.Renderer {
         addUIElement(btn_right_turn)
 
         // TEST
-        Log.d("TAG-MessageMap", ":1 ")
         if(Global.assets == null)
             return
         var map: MessageMap.Message_Map
@@ -100,6 +98,7 @@ class GLRenderer : GLSurfaceView.Renderer {
         rbkMap.setNormalPosAndRssiPosVertex(reader.posVertex)
         rbkMap.setBound(reader.bound, 10F)
         rbkMap.setLineVertex(reader.lineVertex)
+        rbkMap.setMeshVertex(reader.meshVertex)
         // TEST END
     }
 

@@ -3,12 +3,16 @@ package com.seergroup.srj.nativelib
 import android.content.res.AssetManager
 import android.util.Log
 import com.seergroup.srj.Global
+import java.nio.ByteBuffer
 
 
 class FontFace {
     enum class Align { Left, Right, HCenter, Top, Bottom, VCenter, Center }
     data class FontTexCoord(val x: Float, val y: Float, val xTexCoord: Float, val yTexCoord: Float)
-    data class FontVertex(val FontTexCoordList: List<FontTexCoord>, val indices: List<Int>)
+    data class FontVertex(
+        val fontTexCoordList: List<FontTexCoord> = emptyList(),
+        val indices: List<Int> = emptyList()
+    )
 
     data class CharTextureInfo(
         val width: Int,
@@ -23,6 +27,9 @@ class FontFace {
     private external fun deleteFontFace(instance: Long)
     private external fun getErrorString(instance: Long): String
     private external fun getCharacter(instance: Long, c: Char): CharTextureInfo
+    private external fun getTextureWidth(instance: Long): Int
+    private external fun getTextureHeight(instance: Long): Int
+    private external fun getTextureData(instance: Long): ByteBuffer
 
 
     companion object {
@@ -33,19 +40,31 @@ class FontFace {
         const val CHAR_Y_OFFSET = 2F
     }
 
-    private val instance: Long = newFontFace(Global.assets, "SmileySans-Oblique.ttf")
+    private val instance: Long = newFontFace(Global.assets, "msyh.ttc")
     private val fontMap = mutableMapOf<Char, CharTextureInfo>()
 
     init {
         if (instance == 0L) {
-            Log.d("TAG::FontFace", "Freetype init: Failed")
+            Log.d("SRJ-${javaClass.simpleName}", "Freetype init: Failed")
         }
         val str = getErrorString(instance)
         if (str.isNotEmpty()) {
-            Log.d("TAG::FontFace", str)
+            Log.d("SRJ-${javaClass.simpleName}", str)
         } else {
-            Log.d("TAG::FontFace", "Freetype init: Success")
+            Log.d("SRJ-${javaClass.simpleName}", "Freetype init: Success")
         }
+    }
+
+    fun textureWidth(): Int {
+        return getTextureWidth(instance)
+    }
+
+    fun textureHeight(): Int {
+        return getTextureHeight(instance)
+    }
+
+    fun textureData(): ByteBuffer {
+        return getTextureData(instance)
     }
 
     fun getVertexData(
@@ -56,9 +75,13 @@ class FontFace {
         indicesOffset: Int = 0,
         scale: Float
     ): FontVertex {
+        if (text.isEmpty()) {
+            return FontVertex()
+        }
         val fontTexCoordList = mutableListOf<FontTexCoord>()
         val indices = mutableListOf<Int>()
         val charWidthList = mutableListOf<Float>()
+        charWidthList.add(0F)
         for (c in text) {
             if (c == '\n') {
                 charWidthList.add(0F)
@@ -67,7 +90,7 @@ class FontFace {
             if (c !in fontMap) {
                 fontMap[c] = getCharacter(instance, c)
             }
-            charWidthList.add(fontMap[c]!!.advance * scale)
+            charWidthList[charWidthList.size - 1] += fontMap[c]!!.advance * scale
         }
 
         if (align == Align.HCenter || align == Align.Center) {
@@ -103,7 +126,7 @@ class FontFace {
             var x1: Float = tX + ft.bearingX * scale
             var x2: Float = x1 + ft.width * scale
             var y1: Float = tY + ft.bearingY * scale
-            var y2: Float = y1 - ft.height
+            var y2: Float = y1 - ft.height * scale
             fontTexCoordList.add(FontTexCoord(x1, y1, ft.xOffset.toFloat(), CHAR_Y_OFFSET))
             fontTexCoordList.add(
                 FontTexCoord(
@@ -144,6 +167,6 @@ class FontFace {
 
     fun destroy() {
         deleteFontFace(instance)
-        Log.d("TAG::FontFace", "destroy: Success")
+        Log.d("SRJ-${javaClass.simpleName}", "destroy: Success")
     }
 }

@@ -4,7 +4,6 @@ import android.content.Context
 import android.opengl.GLSurfaceView
 import android.view.MotionEvent
 import com.seergroup.srj.gl.matrix.Vec2
-import com.seergroup.srj.nativelib.FontFace
 import kotlin.math.sqrt
 
 class GLView(context: Context) : GLSurfaceView(context) {
@@ -16,10 +15,6 @@ class GLView(context: Context) : GLSurfaceView(context) {
         renderer = GLRenderer()
         setRenderer(renderer)
         renderMode = RENDERMODE_WHEN_DIRTY
-        // TEST
-        val f = FontFace()
-        f.destroy()
-        //TEST END
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {

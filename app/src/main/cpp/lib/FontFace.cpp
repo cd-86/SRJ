@@ -54,7 +54,7 @@ FontFace::TextureInfo FontFace::getCharInfo(FT_ULong c) {
             bitmap.rows,
             m_face->glyph->bitmap_left,
             m_face->glyph->bitmap_top,
-            (int)m_face->glyph->advance.x >> 6,
+            int(m_face->glyph->advance.x >> 6),
             m_textureWidth
     };
     delete[] m_textureData;
