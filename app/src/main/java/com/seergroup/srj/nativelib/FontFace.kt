@@ -40,7 +40,7 @@ class FontFace {
         const val CHAR_Y_OFFSET = 2F
     }
 
-    private val instance: Long = newFontFace(Global.assets, "msyh.ttc")
+    private val instance: Long = newFontFace(Global.assets, "fonts/NotoSansSC-Regular.ttf")
     private val fontMap = mutableMapOf<Char, CharTextureInfo>()
 
     init {

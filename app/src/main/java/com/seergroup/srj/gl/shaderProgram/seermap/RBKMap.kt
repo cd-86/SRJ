@@ -438,17 +438,17 @@ class RBKMap {
                 GLES32.glTexParameteri(
                     GLES32.GL_TEXTURE_2D,
                     GLES32.GL_TEXTURE_WRAP_T,
-                    GLES32.GL_REPEAT
+                    GLES32.GL_CLAMP_TO_EDGE
                 )
                 GLES32.glTexParameteri(
                     GLES32.GL_TEXTURE_2D,
                     GLES32.GL_TEXTURE_MIN_FILTER,
-                    GLES32.GL_LINEAR_MIPMAP_LINEAR
+                    GLES32.GL_NEAREST
                 )
                 GLES32.glTexParameteri(
                     GLES32.GL_TEXTURE_2D,
                     GLES32.GL_TEXTURE_MAG_FILTER,
-                    GLES32.GL_LINEAR
+                    GLES32.GL_NEAREST
                 )
                 GLES32.glTexImage2D(
                     GLES32.GL_TEXTURE_2D,
@@ -461,7 +461,7 @@ class RBKMap {
                     GLES32.GL_UNSIGNED_BYTE,
                     Global.fontFace!!.textureData()
                 )
-                GLES32.glGenerateMipmap(GLES32.GL_TEXTURE_2D)
+//                GLES32.glGenerateMipmap(GLES32.GL_TEXTURE_2D)
             }
         }
     }
